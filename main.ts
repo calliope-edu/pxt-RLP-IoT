@@ -62,7 +62,7 @@ namespace grove {
     //% block.loc.de="Entfernung|%pin|%unit"
     //% pin.fieldEditor="gridpicker" pin.fieldOptions.columns=4
     //% pin.fieldOptions.tooltips="false" pin.fieldOptions.width="250"
-    //% group="Ultrasonic" group.loc.de="Ultraschall" pin.defl=DigitalPin.C16
+    //% group="Ultraschall" group.loc.de="Ultraschall" pin.defl=DigitalPin.C16
     //% weight=30
     export function measureDistance(pin: DigitalPin, unit: DistanceUnit): number {
         let duration = 0;
@@ -91,13 +91,13 @@ namespace grove {
      * Read the values of the moisture sensor in percent
      * @param pin signal pin of moisture sensor module
      */
-    //% blockId=grove_Moisture_percent block="Moisture Sensor (percent) at %pin"
+    //% blockId=grove_Moisture block="Moisture Sensor at %pin"
     //% pin.fieldEditor="gridpicker" pin.fieldOptions.columns=4
     //% pin.fieldOptions.tooltips="false" pin.fieldOptions.width="250"
-    //% group="Moisture" group.loc.de="Boden-Feuchtigkeit" pin.defl=AnalogPin.C16
+    //% group="Boden Feuchtigkeit" group.loc.de="Boden-Feuchtigkeit" pin.defl=AnalogPin.C16
     //% weight=35
     //% block.loc.de="Feuchtigkeit|%pin"
-    export function measureMoisturePercent(pin: AnalogPin): number {
+    export function measureMoisture(pin: AnalogPin): number {
         let percentValue = pins.analogReadPin(pin);
         return Math.round(percentValue);
     }
