@@ -1,18 +1,14 @@
 {
-    "name": "Thingsboard_AHT20_Grove",
-    "version": "0.1.3",
-    "description": "A PL Grove AHT20 Thingsboard Package",
+    "name": "IoT Sensoren",
+    "version": "0.1.4",
+    "description": "Extension for AHT20, SCD30, ultrasonic distance and soil humidity sensors",
     "license": "MIT",
     "dependencies": {
         "core": "*"
     },
     "files": [
         "README.md",
-        "main.ts",
-        "blocks/GroveAHT20.ts",
-        "_locales/ja/Grove-strings.json",
-        "_locales/de/Grove-strings.json",
-        "sensors/AHT20.ts"
+        "main.ts"
     ],
     "testFiles": [
         "test.ts"
