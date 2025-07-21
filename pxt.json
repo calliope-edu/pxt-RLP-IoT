@@ -1,6 +1,6 @@
 {
     "name": "RLP IoT",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "description": "RLP IoT and LoRa extension including AHT20, SCD30, ultrasonic distance and soil humidity sensors",
     "license": "MIT",
     "dependencies": {

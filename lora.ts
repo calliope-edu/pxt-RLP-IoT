@@ -85,7 +85,7 @@ enum ADCPins {
 
 
 
-//% weight=8 color=#9F79EE icon="\uf1b3" block="IoT-WiFi"
+//% weight=8 color=#9F79EE icon="\uf1b3" block="IoT-LoRa"
 namespace IotLoRaNode {
     serial.redirect(SerialPin.C17, SerialPin.C16, BaudRate.BaudRate9600); // C16/C17
     let payload = ""
