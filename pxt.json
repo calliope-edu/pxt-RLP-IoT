@@ -9,7 +9,8 @@
     "files": [
         "README.md",
         "sensoren.ts",
-        "wifi.ts"
+        "wifi.ts",
+        "lora.ts"
     ],
     "testFiles": [
         "test.ts"
