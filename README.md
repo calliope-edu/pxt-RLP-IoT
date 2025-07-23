@@ -1,5 +1,5 @@
 ## RLP IoT
-RLP IoT and LoRa extension including AHT20, SCD30, ultrasonic distance and soil humidity sensors
+RLP WiFi-IoT and LoRa extension for Calliope mini Grove-Connectors including AHT20, SCD30, ultrasonic distance and soil humidity sensors
 
 ## License
 
