@@ -17,208 +17,200 @@
 * Last Updated 2020-02-13-1520
 */
 
-enum Channels {
-    //% block="One"    
-    One = 1,
-    //% block="Two"
-    Two = 2,
-    //% block="Three"
-    Three = 3,
-    //% block="Four"
-    Four = 4,
-    //% block="Five"
-    Five = 5,
-    //% block="Six"
-    Six = 6,
-    //% block="Seven"
-    Seven = 7,
-    //% block="Eight"
-    Eight = 8,
-    //% block="Nine"
-    Nine = 9,
-    //% block="Ten"
-    Ten = 10,
-    //% block="Eleven"
-    Eleven = 11,
-    //% block="Twelve"
-    Twelve = 12,
-    //% block="Thirteen"
-    Thirteen = 13,
-    //% block="Fourteen"
-    Fourteen = 14,
-    //% block="fifteen"
-    Fifteen = 15,
-    //% block="Sixteen"
-    Sixteen = 16,
-    //% block="Seventeen"
-    Seventeen = 17,
-    //% block="Eighteen"
-    Eighteen = 18,
-    //% block="Nineteen"
-    Nineteen = 19,
-    //% block="Twenty"
-    Twenty = 20
-
-}
-
-enum GPIOPins {
-    //% block="PA15"
-    PA15 = 14,
-    //% block="PB3"
-    PB3 = 15,
-    //% block="PB5"
-    PB5 = 16,
-    //% block="PB8"
-    PB8 = 18,
-    //% block="PB9"
-    PB9 = 19,
-    //% block="PA2"
-    PA2 = 20
-
-}
-
-enum ADCPins {
-    //% block="PA2"
-    PA2 = 20
-
-}
-
-
-
 //% weight=8 color=#9F79EE icon="\uf1b3" block="IoT-LoRa"
+let payload = ""
+
 namespace IotLoRaNode {
-    serial.redirect(SerialPin.C17, SerialPin.C16, BaudRate.BaudRate9600); // C16/C17
-    let payload = ""
 
-    //% blockId="IotLoRaNode_InitializeRadioOTAA" block="Initialize LoRa Radio via OTAA:|Device Eui %deveui|App Key %appkey"
+    function sendLoraAtCmd(cmd: string) {
+        led.toggle(4, 0)
+        serial.writeLine(cmd)
+        led.toggle(4, 0)
+    }
+
+    function waitAtResponse(target1: string, target2: string, target3: string, timeout: number) {
+        let start = input.runningTime()
+        let buffer = ""
+        while (input.runningTime() - start < timeout) {
+            buffer = "" + buffer + serial.readLine()
+            if (buffer.includes(target1)) {
+                return 1
+            }
+            if (buffer.includes(target2)) {
+                return 2
+            }
+            if (buffer.includes(target3)) {
+                return 3
+            }
+            basic.pause(100)
+        }
+        return 0
+    }
+
+    //%blockId="IotLoRaNode_InitialiseRadioOTAA" block="Initialise LoRa Radio via OTAA:|Device Eui %deveui|App Key %appkey"
+    //% block.loc.de="LoRa Radio über OTAA initialisieren:|Geräte Eui %deveui|App Schlüssel %appkey"
     //% blockGap=8
-    //% weight=60
-    export function InitializeRadioOTAA(deveui: string, appkey: string): void {
+    //% weight=100
+    export function InitialiseRadioOTAA(deveui: string, appkey: string): void {
 
-        basic.pause(75)
-        //Set to use LoRaWAN Mode 
-        serial.writeString("AT+MODE=LWOTAA\r\n");
-        serial.readLine()
+        // Initialize serial for LoRa module (C16/C17)
+        serial.redirect(SerialPin.C17, SerialPin.C16, BaudRate.BaudRate9600);
+        serial.setRxBufferSize(64)
 
-        basic.pause(75)
         //Set to use LoRaWAN Mode
-        serial.writeString("AT+DR=EU868\r\n");
-        serial.readLine()
+        sendLoraAtCmd("AT+MODE=LWOTAA")
+        waitAtResponse("LWOTAA", "ERROR", "abc", 100)
 
-        basic.pause(75)
+
         //Set to use LoRaWAN Mode
-        serial.writeString("AT+CH=NUM,0-2\r\n");
-        serial.readLine()
+        sendLoraAtCmd("AT+DR=EU868")
+        waitAtResponse("EU868", "ERROR", "abc", 100)
 
-        basic.pause(75)
+
+        //Set to use LoRaWAN Mode
+        sendLoraAtCmd("AT+CH=NUM,0-2")
+        waitAtResponse("NUM", "", "ERROR", 100)
+
+
+
         //Set the application session key
-        serial.writeString("AT+KEY=APPKEY," + appkey + "\r\n");
-        serial.readLine()
+        sendLoraAtCmd("AT+KEY=APPKEY," + appkey + "")
+        waitAtResponse("APPKEY", "", "ERROR", 100)
 
-        basic.pause(75)
+
         //Set the device extended unique identifier
-        serial.writeString("AT+ID=DEVEUI," + deveui + "\r\n");
-        serial.readLine()
+        sendLoraAtCmd("AT+ID=DEVEUI," + deveui + "")
+        waitAtResponse("DevEui", "", "ERROR", 100)
 
-        basic.pause(75)
+
         //Set the application session key
-        serial.writeString("AT+CLASS=C\r\n");
-        serial.readLine()
+        sendLoraAtCmd("AT+CLASS=C")
+        waitAtResponse("C", "", "ERROR", 100)
 
-        basic.pause(75)
         //Set the application session key
-        serial.writeString("AT+PORT=8\r\n");
-        serial.readLine()
+        sendLoraAtCmd("AT+PORT=8")
+        waitAtResponse("8", "", "ERROR", 100)
 
-        basic.pause(75)
-        //"Join" the LoRaWAN Network in ABP Mode
-        serial.writeString("AT+JOIN\r\n");
-        serial.readLine()
-
-        //Display on the screen that LoRa is ready.
-        basic.showString("LoRa Ready")
-
-
+        //Join TTN
+        sendLoraAtCmd("AT+JOIN")
+        if (waitAtResponse("joined", "failed", "ERROR", 5000) == 1) {
+            basic.showString("Verbunden", 70)
+        }
     }
 
 
+    //%blockId="IotLoRaNode_TransmitMessage" block="Transmit LoRa Data"
+    //% block.loc.de="LoRa Daten übertragen"
+    //% weight=95
+    export function loraTransmitPayload(): void {
+        /**
+         * Transmit Message
+         */
+        sendLoraAtCmd("AT+CMSGHEX=" + payload)
+        basic.pause(100)
+        payload = ""
+    }
 
-    //% blockId="IotLoRaNode_DigitalValue"
-    //% block="Add Digital Value: %value on channel: %chanNum"
-    export function DigitalValue(value: boolean, chanNum: Channels): void {
+    //%blockId="IotLoRaNode_DigitalValue"
+    //%block="Add Digital Value: %value on channel: %channel"
+    //% block.loc.de="Digitalen Wert hinzufügen: %value auf Kanal: %channel"
+    //% channel.min=0 channel.max=20
+    //% channel.defl=1
+    //% weight=50
+    export function DigitalValue(value: boolean, channel: number): void {
         /**
          * Add digital value
          */
         let intVal = value ? 1 : 0;
-        payload = payload + "0" + chanNum + "000" + intVal;
+        payload = payload + "0" + channel + "000" + intVal;
+
 
     }
-    //% blockId="IotLoRaNode_AnalogueValue" block="Add Analogue Value: %value on channel: %chanNum"
+    //%blockId="IotLoRaNode_AnalogueValue" block="Add Analogue Value: %value on channel: %channel"
+    //% block.loc.de="Analogen Wert hinzufügen: %value auf Kanal: %channel"
     //% value.min=0 value.max=254
-    export function AnalogueValue(value: number, chanNum: Channels): void {
+    //% channel.min=0 channel.max=20
+    //% channel.defl=1
+    //% weight=55
+    export function AnalogueValue(value: number, channel: number): void {
         /**
          * Add analogue value
          */
         let bufr = pins.createBuffer(2);
         bufr.setNumber(NumberFormat.Int16BE, 0, (value * 100))
-
-        payload = payload + "0" + chanNum + "02" + bufr.toHex();
-
-
+        payload = payload + "0" + channel + "02" + bufr.toHex();
     }
 
-    //% blockId="IotLoRaNode_temperatureValue" block="Add Temperature Value: %temperatureVal to channel: %chanNum"
-    export function TemperatureValue(temperatureVal: number, chanNum: Channels): void {
+
+    //%blockId="IotLoRaNode_temperatureValue" block="Add Temperature Value: %temperatureVal on channel: %channel"
+    //% block.loc.de="Temperaturwert hinzufügen: %temperatureVal auf Kanal: %channel"
+    //% channel.min=0 channel.max=20
+    //% channel.defl=1
+    //% weight=90
+    export function TemperatureValue(temperatureVal: number, channel: number): void {
         /**
          * Add temperature value
          */
         let bufr = pins.createBuffer(2);
         bufr.setNumber(NumberFormat.Int16BE, 0, (temperatureVal * 10))
-
-        payload = payload + "0" + chanNum + "67" + bufr.toHex();
-
-
-    }
-
-    //% blockId="IotLoRaNode_barometerValue" block="Add Barometer Value: %barometerVal to channel: %chanNum"
-    export function BarometerValue(barometerVal: number, chanNum: Channels): void {
-        /**
-         * Add barometer value
-         */
-        let bufr = pins.createBuffer(2);
-        bufr.setNumber(NumberFormat.Int16BE, 0, (barometerVal * 10))
-
-        payload = payload + "0" + chanNum + "73" + bufr.toHex();
+        payload = payload + "0" + channel + "67" + bufr.toHex();
 
 
     }
 
-    //% blockId="IotLoRaNode_PresenceSensor"
-    //% block="Add Presence Sensor: %value on channel: %chanNum"
-    export function PresenceSensor(value: boolean, chanNum: Channels): void {
-        /**
-         * Add presence value
-         */
-        let intVal = value ? 1 : 0;
-        payload = payload + "0" + chanNum + "660" + intVal;
-
-    }
-
-    //% blockId="IotLoRaNode_HumidityValue" block="Add Humidity Value: %humidityVal to channel: %chanNum"
-    export function HumidityValue(humidityVal: number, chanNum: Channels): void {
+    //%blockId="IotLoRaNode_HumidityValue" block="Add Humidity Value: %humidityVal on channel: %channel"
+    //% block.loc.de="Feuchtigkeitswert hinzufügen: %humidityVal auf Kanal: %channel"
+    //% channel.min=0 channel.max=20
+    //% channel.defl=1
+    //% weight=85
+    export function HumidityValue(humidityVal: number, channel: number): void {
         /**
          * Add humidity value
          */
         let bufr = pins.createBuffer(1);
         bufr.setNumber(NumberFormat.UInt8BE, 0, (humidityVal * 2))
 
-        payload = payload + "0" + chanNum + "68" + bufr.toHex();
+        payload = payload + "0" + channel + "68" + bufr.toHex();
 
 
     }
 
-    //% blockId="IotLoRaNode_AccelorometerValue" block="Add Accelerometer Values |X %accelValX|Y %accelVal|Z %accelValZ to channel %chanNum"
-    export function AccelorometerValue(accelValX: number, accelValY: number, accelValZ: number, chanNum: Channels): void {
+
+    //% blockId="IotLoRaNode_barometerValue" block="Add Barometer Value: %barometerVal on channel: %channel"
+    //% block.loc.de="Barometerwert hinzufügen: %barometerVal auf Kanal: %channel"
+    //% channel.min=0 channel.max=20
+    //% channel.defl=1
+    //% weight=60
+    export function BarometerValue(barometerVal: number, channel: number): void {
+        /**
+         * Add barometer value
+         */
+        let bufr = pins.createBuffer(2);
+        bufr.setNumber(NumberFormat.Int16BE, 0, (barometerVal * 10))
+
+        payload = payload + "0" + channel + "73" + bufr.toHex();
+    }
+
+    //% blockId="IotLoRaNode_PresenceSensor"
+    //% block="Add Presence Sensor: %value on channel: %channel"
+    //% block.loc.de="Anwesenheitssensor hinzufügen: %value auf Kanal: %channel"
+    //% channel.min=0 channel.max=20
+    //% channel.defl=1
+    //% weight=65
+    export function PresenceSensor(value: boolean, channel: number): void {
+        /**
+         * Add presence value
+         */
+        let intVal = value ? 1 : 0;
+        payload = payload + "0" + channel + "660" + intVal;
+    }
+
+    //% blockId="IotLoRaNode_AccelorometerValue" block="Add Accelerometer Values |X %accelValX|Y %accelValY|Z %accelValZ on channel %channel"
+    //% block.loc.de="Beschleunigungsmesser-Werte hinzufügen |X %accelValX|Y %accelValY|Z %accelValZ auf Kanal %channel"
+    //% channel.min=0 channel.max=20
+    //% channel.defl=1
+    //% weight=75
+    export function AccelorometerValue(accelValX: number, accelValY: number, accelValZ: number, channel: number): void {
         /**
          * Add accelorometer
          */
@@ -227,28 +219,31 @@ namespace IotLoRaNode {
         bufr.setNumber(NumberFormat.Int16BE, 2, (accelValY * 100))
         bufr.setNumber(NumberFormat.Int16BE, 4, (accelValZ * 100))
 
-        payload = payload + "0" + chanNum + "71" + bufr.toHex();
-
+        payload = payload + "0" + channel + "71" + bufr.toHex();
     }
 
-
-    //% blockId="IotLoRaNode_LightValue" block="Add light Value: %lightVal on channel: %chanNum"
-    export function LightValue(lightVal: number, chanNum: Channels): void {
+    //% blockId="IotLoRaNode_LightValue" block="Add light Value: %lightVal on channel: %channel"
+    //% block.loc.de="Lichtwert hinzufügen: %lightVal auf Kanal: %channel"
+    //% channel.min=0 channel.max=20
+    //% channel.defl=1
+    //% weight=80
+    export function LightValue(lightVal: number, channel: number): void {
         /**
          * Add light value
          */
         let bufr = pins.createBuffer(2);
         bufr.setNumber(NumberFormat.Int16BE, 0, (lightVal))
 
-        payload = payload + "0" + chanNum + "65" + bufr.toHex();
-
+        payload = payload + "0" + channel + "65" + bufr.toHex();
     }
 
-
-
-    //% blockId="IotLoRaNode_GPS" block="Add GPS Value - Latitude: %latitude Longitude %longitude Altitude %altitude on channel: %chanNum"
+    //% blockId="IotLoRaNode_GPS" block="Add GPS Value - |Latitude: %latitude |Longitude %longitude |Altitude %altitude on channel: %channel"
+    //% block.loc.de="GPS-Wert hinzufügen - |Breitengrad: %latitude |Längengrad %longitude |Höhe %altitude auf Kanal: %channel"
     //% blockGap=8
-    export function GPS(latitude: number, longitude: number, altitude: number, chanNum: Channels): void {
+    //% channel.min=0 channel.max=20
+    //% channel.defl=1
+    //% weight=70
+    export function GPS(latitude: number, longitude: number, altitude: number, channel: number): void {
         /**
          * Add GPS value
          */
@@ -262,25 +257,7 @@ namespace IotLoRaNode {
         let altBuf = pins.createBuffer(4);
         altBuf.setNumber(NumberFormat.Int32BE, 0, altitude * 100)
         let altBuf2 = altBuf.slice(1, 4);
-        payload = "" + payload + "0" + chanNum + "88" + lonBuf2.toHex() + latBuf2.toHex() + altBuf2.toHex()
-
-
-
-
+        payload = "" + payload + "0" + channel + "88" + lonBuf2.toHex() + latBuf2.toHex() + altBuf2.toHex()
     }
-
-    //% blockId="IotLoRaNode_TransmitMessage" block="Transmit LoRa Data"
-    //% weight=50
-    export function loraTransmitPayload(): void {
-        /**
-         * Transmit Message
-         */
-
-        serial.writeString("AT+CMSGHEX=" + payload + "\r\n");
-        serial.readUntil(serial.delimiters(Delimiters.NewLine))
-        basic.pause(100)
-        payload = ""
-    }
-
 
 }
