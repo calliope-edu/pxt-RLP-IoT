@@ -17,9 +17,9 @@
 * Last Updated 2020-02-13-1520
 */
 
-//% weight=8 color=#9F79EE icon="\uf1b3" block="IoT-LoRa"
 let payload = ""
 
+//% weight=8 color=#9F79EE icon="\uf1b3" block="IoT-LoRa"
 namespace IotLoRaNode {
 
     function sendLoraAtCmd(cmd: string) {
