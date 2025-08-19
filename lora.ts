@@ -18,33 +18,50 @@
 */
 
 let payload = ""
-
+let debugmode = true
 //% weight=8 color=#9F79EE icon="\uf1b3" block="IoT-LoRa"
 namespace IotLoRaNode {
 
     function sendLoraAtCmd(cmd: string) {
         led.toggle(4, 0)
-        serial.writeLine(cmd)
+        if (debugmode){
+            serial.redirect(SerialPin.USB_TX, SerialPin.USB_RX, BaudRate.BaudRate115200);
+            basic.pause(10)
+            serial.writeString("CMD:" + cmd + "\r\n")
+            serial.redirect(SerialPin.C17, SerialPin.C16, BaudRate.BaudRate9600);
+            basic.pause(10)
+        }
+        serial.writeLine(cmd + "\r\n")
         led.toggle(4, 0)
     }
 
     function waitAtResponse(target1: string, target2: string, target3: string, timeout: number) {
         let start = input.runningTime()
         let buffer = ""
+        let result = 0
         while (input.runningTime() - start < timeout) {
             buffer = "" + buffer + serial.readLine()
             if (buffer.includes(target1)) {
-                return 1
+                result = 1
             }
             if (buffer.includes(target2)) {
-                return 2
+                result = 2
             }
             if (buffer.includes(target3)) {
-                return 3
+                result = 3
             }
             basic.pause(100)
         }
-        return 0
+        if (debugmode){
+            serial.redirect(SerialPin.USB_TX, SerialPin.USB_RX, BaudRate.BaudRate115200);
+            basic.pause(10)
+            serial.writeString("RCV:" + buffer + "\r\n")
+            serial.redirect(SerialPin.C17, SerialPin.C16, BaudRate.BaudRate9600);
+        }
+        basic.pause(10)
+
+
+        return result
     }
 
     //%blockId="IotLoRaNode_InitialiseRadioOTAA" block="Initialise LoRa Radio via OTAA:|Device Eui %deveui|App Key %appkey"
@@ -52,25 +69,40 @@ namespace IotLoRaNode {
     //% blockGap=8
     //% weight=100
     export function InitialiseRadioOTAA(deveui: string, appkey: string): void {
+        let status = 0
 
         // Initialize serial for LoRa module (C16/C17)
         serial.redirect(SerialPin.C17, SerialPin.C16, BaudRate.BaudRate9600);
         serial.setRxBufferSize(64)
+        
+        // Reset Lora Node
+        //serial.writeLine("AT+RESET")
+        //basic.pause(2000)
+        //serial.readLine()
+        //waitAtResponse("OK","ERROR","",1000)
+
+
+        //Set to use LoRaWAN Mode
+        sendLoraAtCmd("AT+VER")
+        waitAtResponse("VER", "ERROR", "", 100)
 
         //Set to use LoRaWAN Mode
         sendLoraAtCmd("AT+MODE=LWOTAA")
-        waitAtResponse("LWOTAA", "ERROR", "abc", 100)
+        waitAtResponse("LWOTAA", "ERROR", "", 100)
 
 
         //Set to use LoRaWAN Mode
         sendLoraAtCmd("AT+DR=EU868")
-        waitAtResponse("EU868", "ERROR", "abc", 100)
+        waitAtResponse("EU868", "ERROR", "", 100)
 
 
         //Set to use LoRaWAN Mode
         sendLoraAtCmd("AT+CH=NUM,0-2")
         waitAtResponse("NUM", "", "ERROR", 100)
 
+        //Set to use LoRWAN Mode
+        sendLoraAtCmd("AT+CLASS=C")
+        waitAtResponse("C", "", "ERROR", 100)
 
 
         //Set the application session key
@@ -84,18 +116,26 @@ namespace IotLoRaNode {
 
 
         //Set the application session key
-        sendLoraAtCmd("AT+CLASS=C")
-        waitAtResponse("C", "", "ERROR", 100)
-
-        //Set the application session key
         sendLoraAtCmd("AT+PORT=8")
         waitAtResponse("8", "", "ERROR", 100)
 
+        let currenttries = 0
+        let maxtries = 3
         //Join TTN
-        sendLoraAtCmd("AT+JOIN")
-        if (waitAtResponse("joined", "failed", "ERROR", 5000) == 1) {
-            basic.showString("Verbunden", 70)
+        while (status != 1 && currenttries <= maxtries){
+            
+            sendLoraAtCmd("AT+JOIN")
+            status = waitAtResponse("joined", "failed", "ERROR", 2000)
+            if (status == 1) {
+                basic.showString("Verbunden", 70)
+            }
+            else if (status == 2) {
+                basic.showString("Failed", 70)
+                currenttries = currenttries + 1
+                basic.pause(3000)
+            }
         }
+
     }
 
 
