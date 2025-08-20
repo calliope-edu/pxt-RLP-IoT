@@ -24,7 +24,7 @@ namespace IotLoRaNode {
 
     function sendLoraAtCmd(cmd: string) {
         led.toggle(4, 0)
-        if (debugmode){
+        if (debugmode) {
             serial.redirect(SerialPin.USB_TX, SerialPin.USB_RX, BaudRate.BaudRate115200);
             basic.pause(10)
             serial.writeString("CMD:" + cmd + "\r\n")
@@ -52,7 +52,7 @@ namespace IotLoRaNode {
             }
             basic.pause(100)
         }
-        if (debugmode){
+        if (debugmode) {
             serial.redirect(SerialPin.USB_TX, SerialPin.USB_RX, BaudRate.BaudRate115200);
             basic.pause(10)
             serial.writeString("RCV:" + buffer + "\r\n")
@@ -74,13 +74,6 @@ namespace IotLoRaNode {
         // Initialize serial for LoRa module (C16/C17)
         serial.redirect(SerialPin.C17, SerialPin.C16, BaudRate.BaudRate9600);
         serial.setRxBufferSize(64)
-        
-        // Reset Lora Node
-        //serial.writeLine("AT+RESET")
-        //basic.pause(2000)
-        //serial.readLine()
-        //waitAtResponse("OK","ERROR","",1000)
-
 
         //Set to use LoRaWAN Mode
         sendLoraAtCmd("AT+VER")
@@ -106,30 +99,33 @@ namespace IotLoRaNode {
 
 
         //Set the application session key
-        sendLoraAtCmd("AT+KEY=APPKEY," + appkey + "")
+        sendLoraAtCmd("AT+KEY=APPKEY," + appkey)
         waitAtResponse("APPKEY", "", "ERROR", 100)
 
 
         //Set the device extended unique identifier
-        sendLoraAtCmd("AT+ID=DEVEUI," + deveui + "")
+        sendLoraAtCmd("AT+ID=DEVEUI," + deveui)
         waitAtResponse("DevEui", "", "ERROR", 100)
 
+        //Set the device AppEUI
+        sendLoraAtCmd("AT+ID=AppEUI," + "8000000000000006") 
+        waitAtResponse("AppEui", "", "ERROR", 100)
 
         //Set the application session key
         sendLoraAtCmd("AT+PORT=8")
         waitAtResponse("8", "", "ERROR", 100)
 
         let currenttries = 0
-        let maxtries = 3
+        let maxtries = 2
         //Join TTN
-        while (status != 1 && currenttries <= maxtries){
-            
+        while (status != 1 && currenttries <= maxtries) {
+
             sendLoraAtCmd("AT+JOIN")
-            status = waitAtResponse("joined", "failed", "ERROR", 2000)
+            status = waitAtResponse("joined", "failed", "ERROR", 1000)
             if (status == 1) {
-                basic.showString("Verbunden", 70)
+                basic.showString("Connected", 70)
             }
-            else if (status == 2) {
+            else if (status != 1) {
                 basic.showString("Failed", 70)
                 currenttries = currenttries + 1
                 basic.pause(3000)
