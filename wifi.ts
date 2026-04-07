@@ -62,8 +62,7 @@ namespace iot_wifi {
     export function sendToThingsboard(AccessToken: string, Daten1: number = 0.0, Daten2: number = 0.0, Daten3: number = 0.0, Daten4: number = 0.0, Daten5: number = 0.0, Daten6: number = 0.0, Daten7: number = 0.0, Daten8: number = 0.0) {
         let result = 0
         let retry = 2
-        basic.showString(ThingsboardAdresse);
-        basic.showString(ThingsboardPort);
+
         let data: { [key: string]: number } = {
             "Daten1": Daten1,
             "Daten2": Daten2,
