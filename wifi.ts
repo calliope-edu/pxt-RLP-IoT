@@ -130,9 +130,10 @@ namespace iot_wifi {
      */
     //% block="Send Data to your ThingSpeak Channel|Write API Key %apiKey|Field1 %field1||Field2 %field2|Field3 %field3|Field4 %field4|Field5 %field5|Field6 %field6|Field7 %field7|Field8 %field8"
     //% block.loc.de="Schicke Daten zu deinem ThingSpeak Kanal|Write API Key %apiKey|Field1 %field1||Field2 %field2|Field3 %field3|Field4 %field4|Field5 %field5|Field6 %field6|Field7 %field7|Field8 %field8"
+    //% expandableArgumentMode="enabled"
     //% apiKey.defl="your Write API Key"
     //% weight=9
-    export function sendToThingSpeak(apiKey: string, field1: number, field2: number, field3: number, field4: number, field5: number, field6: number, field7: number, field8: number) {
+    export function sendToThingSpeak(apiKey: string, field1: number = null, field2: number = null, field3: number = null, field4: number = null, field5: number = null, field6: number = null, field7: number = null, field8: number = null) {
         let result = 0
         let retry = 2
 
@@ -150,14 +151,14 @@ namespace iot_wifi {
             if (result == 3) continue
 
             let data = "GET /update?api_key=" + apiKey
-            if (!isNaN(field1)) data = data + "&field1=" + field1
-            if (!isNaN(field2)) data = data + "&field2=" + field2
-            if (!isNaN(field3)) data = data + "&field3=" + field3
-            if (!isNaN(field4)) data = data + "&field4=" + field4
-            if (!isNaN(field5)) data = data + "&field5=" + field5
-            if (!isNaN(field6)) data = data + "&field6=" + field6
-            if (!isNaN(field7)) data = data + "&field7=" + field7
-            if (!isNaN(field8)) data = data + "&field8=" + field8
+            if (field1 != null) data = data + "&field1=" + field1
+            if (field2 != null) data = data + "&field2=" + field2
+            if (field3 != null) data = data + "&field3=" + field3
+            if (field4 != null) data = data + "&field4=" + field4
+            if (field5 != null) data = data + "&field5=" + field5
+            if (field6 != null) data = data + "&field6=" + field6
+            if (field7 != null) data = data + "&field7=" + field7
+            if (field8 != null) data = data + "&field8=" + field8
 
             sendAtCmd("AT+CIPSEND=" + (data.length + 2))
             result = waitAtResponse(">", "OK", "ERROR", 2000)
